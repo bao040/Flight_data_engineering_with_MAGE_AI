@@ -102,8 +102,8 @@ default:
   REDSHIFT_IAM_PROFILE: default
   # Snowflake
   SNOWFLAKE_USER: baotagia04
-  SNOWFLAKE_PASSWORD: Haythanhcongnhe1@
-  SNOWFLAKE_ACCOUNT: ztffufj-vb82083
+  SNOWFLAKE_PASSWORD: ***********
+  SNOWFLAKE_ACCOUNT: ***********
   SNOWFLAKE_DEFAULT_WH: COMPUTE_WH                  # Optional default warehouse
   SNOWFLAKE_DEFAULT_DB: FLIGHT_SATISFACTION_MAGE                  # Optional default database
   SNOWFLAKE_DEFAULT_SCHEMA: PUBLIC              # Optional default schema
