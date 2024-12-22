@@ -1,0 +1,229 @@
+# snowflake_load_data
+from mage_ai.settings.repo import get_repo_path
+from mage_ai.io.config import ConfigFileLoader
+from mage_ai.io.snowflake import Snowflake
+from os import path
+if 'data_loader' not in globals():
+    from mage_ai.data_preparation.decorators import data_loader
+if 'test' not in globals():
+    from mage_ai.data_preparation.decorators import test
+
+
+@data_loader
+def load_data_from_snowflake(*args, **kwargs):
+    """
+    Template for loading data from a Snowflake warehouse.
+    Specify your configuration settings in 'io_config.yaml'.
+
+    Docs: https://docs.mage.ai/design/data-loading#example-loading-data-from-snowflake-warehouse
+    """
+    query = '''SELECT * FROM 
+               FLIGHT_SATISFACTION_MAGE.PUBLIC.FLIGHT_SATISFACTION_TABLE_NEW'''
+    config_path = path.join(get_repo_path(), 'io_config.yaml')
+    config_profile = 'default'
+
+    with Snowflake.with_config(ConfigFileLoader(config_path, config_profile)) as loader:
+        return loader.load(query)
+
+
+@test
+def test_output(output, *args) -> None:
+    """
+    Template code for testing the output of the block.
+    """
+    assert output is not None, 'The output is undefined'
+
+############################
+
+# drop_unnecessary_col block
+
+from mage_ai.data_cleaner.transformer_actions.base import BaseAction
+from mage_ai.data_cleaner.transformer_actions.constants import ActionType, Axis
+from mage_ai.data_cleaner.transformer_actions.utils import build_transformer_action
+from pandas import DataFrame
+
+if 'transformer' not in globals():
+    from mage_ai.data_preparation.decorators import transformer
+if 'test' not in globals():
+    from mage_ai.data_preparation.decorators import test
+
+
+@transformer
+def execute_transformer_action(df: DataFrame, *args, **kwargs) -> DataFrame:
+    """
+    Execute Transformer Action: ActionType.REMOVE
+
+    Docs: https://docs.mage.ai/guides/transformer-blocks#remove-columns
+    """
+    action = build_transformer_action(
+        df,
+        action_type=ActionType.REMOVE,
+        arguments=['INDEX'],  # Specify columns to remove
+        axis=Axis.COLUMN,
+    )
+
+    return BaseAction(action).execute(df)
+
+
+@test
+def test_output(output, *args) -> None:
+    """
+    Template code for testing the output of the block.
+    """
+    assert output is not None, 'The output is undefined'
+
+####################
+#data_encoding block
+
+import pandas as pd
+
+if 'transformer' not in globals():
+    from mage_ai.data_preparation.decorators import transformer
+if 'test' not in globals():
+    from mage_ai.data_preparation.decorators import test
+
+
+@transformer
+def transform(data, *args, **kwargs):
+    """
+    Template code for a transformer block.
+
+    Add more parameters to this function if this block has multiple parent blocks.
+    There should be one parameter for each output variable from each parent block.
+
+    Args:
+        data: The output from the upstream parent block
+        args: The output from any additional upstream blocks (if applicable)
+
+    Returns:
+        Anything (e.g. data frame, dictionary, array, int, str, etc.)
+    """
+    # Specify your transformation logic here
+    data['GENDER'] = data['GENDER'].replace({'Male': 0, 'Female': 1})
+    data['CUSTOMER_TYPE'] = data['CUSTOMER_TYPE'].replace({'Loyal Customer': 0, 'disloyal Customer': 1})
+    data['TYPE_OF_TRAVEL'] = data['TYPE_OF_TRAVEL'].replace({'Personal Travel': 0, 'Business travel': 1})
+    data['CLASS'] = data['CLASS'].replace({'Business': 0, 'Eco': 1, 'Eco Plus': 2})
+    data['SATISFACTION'] = data['SATISFACTION'].replace({'satisfied': 0, 'neutral or dissatisfied': 1})
+
+    return data
+
+
+@test
+def test_output(output, *args) -> None:
+    """
+    Template code for testing the output of the block.
+    """
+    assert output is not None, 'The output is undefined'
+
+########################
+# data_modeling block 
+
+import pandas as pd
+
+if 'transformer' not in globals():
+    from mage_ai.data_preparation.decorators import transformer
+if 'test' not in globals():
+    from mage_ai.data_preparation.decorators import test
+
+
+@transformer
+def transform(data, *args, **kwargs):
+    """
+    Template code for a transformer block.
+
+    Add more parameters to this function if this block has multiple parent blocks.
+    There should be one parameter for each output variable from each parent block.
+
+    Args:
+        data: The output from the upstream parent block
+        args: The output from any additional upstream blocks (if applicable)
+
+    Returns:
+        Anything (e.g. data frame, dictionary, array, int, str, etc.)
+    """
+    # Specify your transformation logic here
+    gender_dim = pd.DataFrame({
+    'gender_id': [0, 1],
+    'gender_name': ['Male', 'Female']
+    })
+
+    customer_type_dim = pd.DataFrame({
+        'customer_type_id': [0, 1],
+        'customer_type_name': ['Loyal Customer', 'disloyal Customer']
+    })
+
+    type_of_travel_dim = pd.DataFrame({
+        'type_of_travel_id': [0, 1],
+        'type_of_travel_name': ['Personal Travel', 'Business travel']
+    })
+
+    class_dim = pd.DataFrame({
+        'class_id': [0, 1, 2],
+        'class_name': ['Business', 'Eco', 'Eco Plus']
+    })
+
+    satisfaction_dim = pd.DataFrame({
+        'satisfaction_id': [0, 1],
+        'satisfaction_name': ['satisfied', 'neutral or dissatisfied']
+    })
+
+    fact_table = data[['ID', 'GENDER', 'CUSTOMER_TYPE', 'AGE', 'TYPE_OF_TRAVEL', 'CLASS',
+        'FLIGHT_DISTANCE', 'INFLIGHT_WIFI_SERVICE',
+        'DEPARTURE_ARRIVAL_TIME_CONVENIENT', 'EASE_OF_ONLINE_BOOKING',
+        'GATE_LOCATION', 'FOOD_AND_DRINK', 'ONLINE_BOARDING', 'SEAT_COMFORT',
+        'INFLIGHT_ENTERTAINMENT', 'ON_BOARD_SERVICE', 'LEG_ROOM',
+        'BAGGAGE_HANDLING', 'CHECKIN_SERVICE', 'INFLIGHT_SERVICE',
+        'CLEANLINESS', 'DEPARTURE_DELAY_IN_MINUTES', 'ARRIVAL_DELAY_IN_MINUTES',
+        'SATISFACTION']]
+    
+    return {
+        'gender_dim': gender_dim,
+        'customer_type_dim': customer_type_dim,
+        'type_of_travel_dim': type_of_travel_dim,
+        'class_dim': class_dim,
+        'satisfaction_dim': satisfaction_dim,
+        'fact_table': fact_table
+    }
+
+
+@test
+def test_output(output, *args) -> None:
+    """
+    Template code for testing the output of the block.
+    """
+    assert output is not None, 'The output is undefined'
+
+##############################
+#data_export_to_s3 block 
+
+from mage_ai.settings.repo import get_repo_path
+from mage_ai.io.config import ConfigFileLoader
+from mage_ai.io.s3 import S3
+from pandas import DataFrame
+from os import path
+
+if 'data_exporter' not in globals():
+    from mage_ai.data_preparation.decorators import data_exporter
+
+
+@data_exporter
+def export_data_to_s3(data, **kwargs) -> None:
+    """
+    Template for exporting data to a S3 bucket.
+    Specify your configuration settings in 'io_config.yaml'.
+
+    Docs: https://docs.mage.ai/design/data-loading#s3
+    """
+    config_path = path.join(get_repo_path(), 'io_config.yaml')
+    config_profile = 'default'
+
+    bucket_name = 'mage-ai-flight-satisfaction'
+
+    for key, table in data.items():
+        object_key = f'{key}.csv'
+        S3.with_config(ConfigFileLoader(config_path, config_profile)).export(
+            table,
+            bucket_name,
+            object_key,
+        )
+
